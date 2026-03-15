@@ -1,0 +1,17 @@
+python-dotenv==1.0.1
+numpy==1.26.4
+Pillow==10.4.0
+torch==2.8.0
+torchaudio==2.8.0
+torchvision==0.23.0
+transformers==4.51.0
+accelerate
+sentencepiece==0.1.99
+minicpmo-utils>=1.0.5
+decord
+librosa==0.9.0
+soundfile==0.12.1
+vector-quantize-pytorch==1.18.5
+vocos==0.1.0
+moviepy
+gradio==5.49.1

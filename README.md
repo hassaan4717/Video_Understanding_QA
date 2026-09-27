@@ -1,60 +1,119 @@
-# VidiQA
+# Video Understanding QA
 
-Video Question Answering is the task of answering open-ended questions based on a video clip. They output natural language responses to natural language questions about the content of a video clip. This project uses one of the popular multimodal models, [**MiniCPM-o 4.5**](https://huggingface.co/openbmb/MiniCPM-o-4_5) from the Hugging Face model hub.
+Video Understanding QA is a Gradio application for asking natural-language questions about the visual content of a video. It samples frames from an uploaded clip, sends those images with the question to [MiniCPM-o 4.5](https://huggingface.co/openbmb/MiniCPM-o-4_5), and displays the model's generated answer.
 
-[**MiniCPM-o 4.5**](https://huggingface.co/openbmb/MiniCPM-o-4_5) is the latest and most capable model in the MiniCPM-o series. The model is built in an end-to-end fashion based on **SigLip2**, **Whisper-medium**, **CosyVoice2**, and **Qwen3-8B** with a total of 9B parameters. It exhibits a significant performance improvement, and introduces new features for full-duplex multimodal live streaming.
+## Research Question
+
+**How can a user ask a natural-language question about a video and receive an answer from a multimodal language model?**
+
+This project answers that question with an interactive frame-based workflow: the application samples video frames, combines them with the user's question, and passes the resulting prompt to MiniCPM-o 4.5 for text generation. The answer is returned in the web interface. The application demonstrates this workflow; it does not include a benchmark or quantitative model evaluation.
+
+## How It Works
+
+1. The user uploads a video or selects one of the bundled examples and enters a question.
+2. Decord reads the video and samples frames at approximately one frame per second. If more than 64 frames would be selected, the sampler reduces the set to a maximum of 64 frames.
+3. The sampled images and question are sent to MiniCPM-o 4.5 using its chat interface.
+4. The generated text is shown as the predicted answer in Gradio.
+
+The application loads the model's vision branch only. It does not extract a soundtrack, transcribe speech, or pass audio to the model. Answers are based on sampled frames, so brief events between sampled frames may be missed.
+
+## Features
+
+- Video upload and three bundled example clips.
+- Natural-language questions about the video imagery.
+- Adjustable generation settings:
+  - Temperature: 0.01–1.99 (default 0.7)
+  - Top-p: 0–1 (default 0.8)
+  - Top-k: 0–1000 (default 100)
+  - Maximum generated tokens: 1–4096 (default 512)
+- Text answer output with a copy control.
+
+## Screenshots and Examples
+
+The screenshots below are the existing application/result images in `assets/`.
+
+![Video Understanding QA example 1](assets/Screenshot%20%28434%29.png)
+
+![Video Understanding QA example 2](assets/Screenshot%20%28435%29.png)
+
+![Video Understanding QA example 3](assets/Screenshot%20%28436%29.png)
+
+The sample videos used by the Gradio examples are `videos/sample_video_1.mp4`, `videos/sample_video_2.mp4`, and `videos/sample_video_3.mp4`.
+
+## Requirements
+
+- Python 3.10 or newer is recommended.
+- An NVIDIA GPU with CUDA support is required by the current configuration, which sets the model device to `cuda` and loads weights in bfloat16 precision.
+- Internet access is needed on the first run to download the model from Hugging Face. Allow sufficient disk space for the model weights.
+
+## Run Locally
+
+Clone the repository and enter its directory:
+
+```powershell
+git clone https://github.com/hassaan4717/Video_Understanding_QA.git
+cd Video_Understanding_QA
+```
+
+Create and activate a virtual environment, then install the dependencies:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install spaces
+```
+
+The application imports `spaces` for its GPU decorator, but that package is not currently listed in `requirements.txt`, so it is installed separately above.
+
+Start the application:
+
+```powershell
+python app.py
+```
+
+Open the local URL printed in the terminal (typically `http://127.0.0.1:7860`). The first startup loads the model and may take several minutes. On macOS or Linux, activate the environment with `source .venv/bin/activate` instead.
+
+### Hugging Face Authentication
+
+The model is loaded from the Hugging Face Hub. An access token is optional for a public model, but can be supplied through an `ACCESS_TOKEN` entry in a `.env` file in the project root if authenticated access is needed:
+
+```text
+ACCESS_TOKEN=your_hugging_face_token
+```
+
+Do not commit the token. The repository's `.gitignore` excludes `.env` files.
 
 ## Project Structure
 
-The project is structured as follows:
+```text
+Video Understanding QA/
+├── app.py                     # Gradio interface and example inputs
+├── assets/                    # Existing application screenshots
+├── videos/                    # Bundled example videos
+├── src/
+│   ├── config.py              # Model and generation defaults
+│   ├── exception.py           # Exception formatting
+│   ├── logger.py              # File logging setup
+│   ├── minicpm/
+│   │   ├── model.py           # MiniCPM-o model loading
+│   │   └── response.py        # Video-question inference
+│   └── utils/
+│       └── video_processing.py # Video frame sampling
+├── requirements.txt
+└── LICENSE
+```
 
-- `src\`: The folder that contains the source code for the project.
+## Limitations
 
-  - `minicpm\`: The folder containing the source code for the application's main functionality.
-
-    - `model.py`: The file that contains the code for loading the model and the tokenizer.
-    - `response.py`: The file that contains the function for generating the response for the input video and question.
-
-  - `utils\`: The folder containing the project's utility function.
-    - `video_processing.py`: This file contains the functions for processing the video input.
-
-  - `config.py`: This file contains the configuration for the used model.
-  - `logger.py`: This file contains the project's logging configuration.
-  - `exception.py`: This file contains the exception handling for the project.
-
-- `app.py`: The main file that contains the Gradio application for video question answering.
-- `requirements.txt`: The file containing the project's required dependencies.
-- `LICENSE`: The license file for the project.
-- `README.md`: The README file that contains information about the project.
-- `assets`: The folder that contains the screenshots for working on the application.
-- `videos`: The folder that contains the videos for testing the application.
-
-## Tech Stack
-
-- Python (for the programming language)
-- PyTorch (for the deep learning framework)
-- Hugging Face Transformers Library (for the visual question-answering model)
-- Gradio (for the web application)
-- Hugging Face Spaces (for hosting the gradio application)
-
-## Usage
-
-The web application allows you to upload a video and input a question. The model will analyze the video frames and generate an answer based on the content of the video and the question. This can assist in video summarization, enhance video retrieval by identifying specific scenes or actions, and support visually impaired individuals by describing video content. The application is also useful in educational settings for providing detailed explanations or context based on video material.
-
-## Results
-
-For results, refer to the `assets/` directory for the output screenshots, which show the application in action.
-
-## Contributing
-
-Contributions are welcome! If you would like to contribute to this project, please raise an issue to discuss the changes you want to make. Once the changes are approved, you can create a pull request.
+- This is a frame-based visual QA demo, not a full-video temporal analysis system. Events not captured in the sampled frames may not inform the answer.
+- Audio is not processed, even though the selected model family supports audio capabilities.
+- Generated answers can be incomplete or incorrect; verify important details against the original video.
+- The configured `cuda` device means the current application is not set up for CPU-only inference.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
-
-## Contact
-
-If you have any questions or suggestions regarding the project, feel free to reach out to me on my GitHub profile.
+This project is distributed under the [MIT License](LICENSE).
 
 
